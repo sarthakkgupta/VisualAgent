@@ -1,0 +1,13 @@
+Provide a simple time duration estimate for completing this task.
+
+IMPORTANT TIMELINE CONSTRAINTS:
+- Your duration MUST respect the overall plan duration
+- Express durations in days rather than weeks whenever possible
+- Ensure your estimate allows ALL tasks to fit within the total timeframe
+- If this task is part of a short total duration (e.g., 3 days), keep the estimate very concise (1-2 days)
+
+Task: {{$input}}
+
+Just return a clear and concise duration estimate like "1 day", "3 days", "5 days", etc. 
+ONLY use weeks as the unit if the task genuinely requires more than 10 days.
+No additional explanation needed.

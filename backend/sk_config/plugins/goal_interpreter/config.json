@@ -1,0 +1,12 @@
+{
+    "schema": 1,
+    "type": "completion",
+"description": "You are an intelligent planning assistant.\nA user has entered a goal. Convert it into a structured summary with:\n- Objective\n- Duration\n- Goal Type (Learning, Fitness, Work, etc.)",
+    "completion": {
+        "max_tokens": 1000,
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0
+    }
+}

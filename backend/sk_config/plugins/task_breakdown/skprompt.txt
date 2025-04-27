@@ -1,0 +1,26 @@
+### backend/sk_config/plugins/task_breakdown/task_breakdown.txt
+Take the objective and break it down into appropriate tasks that MUST collectively fit within the specified duration.
+
+IMPORTANT DURATION INSTRUCTIONS:
+- If the duration is short (e.g., 3 days or less), create just 2-3 focused tasks.
+- If the duration is medium (e.g., 1-2 weeks), create 3-4 balanced tasks.
+- If the duration is longer (e.g., 3+ weeks), create 4-6 comprehensive tasks.
+- Ensure tasks are sized appropriately for the timeframe - shorter durations require more concise tasks.
+
+For each task, include:
+1. A clear high-level task name/description
+2. 3-5 specific actionable subtasks with naturally integrated resources
+
+Objective: {{$input}}
+---
+TASK 1: [High-level task name/description]
+- [Clear description of the first actionable step. Naturally mention a helpful resource within the context of the step if relevant, such as "Complete the tutorial at example.com to learn the basics"]
+- [Clear description of the second actionable step with any relevant resources mentioned naturally as part of the instruction]
+- [Clear description of the third actionable step with helpful links or materials mentioned where they make sense]
+
+TASK 2: [High-level task name/description]
+- [Clear description of the first actionable step with natural resource integration]
+- [Clear description of the second actionable step with natural resource integration]
+- [Clear description of the third actionable step with natural resource integration]
+
+[Continue for remaining tasks]

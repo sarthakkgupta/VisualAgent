@@ -1,0 +1,8 @@
+### backend/sk_config/plugins/goal_interpreter/goal_interpreter.txt
+Extract the following from this input:
+1. Objective (what does the user want to do?)
+2. Duration in days/weeks if mentioned
+
+User input: {{$input}}
+---
+Return as: "Objective: ...\nDuration: ..."
