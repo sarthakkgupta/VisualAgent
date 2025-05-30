@@ -2,7 +2,7 @@
 
 # VisualAgent Backend
 
-This project is a backend for an AI project using FastAPI and Semantic Kernel. It is designed to orchestrate multiple agents and interact with OpenAI or Azure OpenAI APIs.
+This project is a backend for an AI project, Please checkout the frontend here - https://github.com/sarthakkgupta/AIProject.git using FastAPI and Semantic Kernel. It is designed to orchestrate multiple agents and interact with OpenAI or Azure OpenAI APIs.
 
 ## Prerequisites
 
