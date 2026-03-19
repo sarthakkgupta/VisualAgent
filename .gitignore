@@ -24,6 +24,11 @@ var/
 venv/
 ENV/
 env/
+.venv/
+.venv-1/
+
+# Node
+node_modules/
 
 # Environment variables - explicitly exclude
 .env
@@ -47,3 +52,6 @@ db/data/
 
 # Jupyter notebooks
 .ipynb_checkpoints/
+
+
+//["southeastasia","eastasia","koreacentral","austriaeast","malaysiawest"]

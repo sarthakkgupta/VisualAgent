@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException, status, Body
 from fastapi.middleware.cors import CORSMiddleware
-from sk_config.kernel import get_kernel_and_plugins
+from sk_config.plugins import call_goal_interpreter, call_task_breakdown, call_timeline_generator, call_plan_modifier
 from db.mongo_config import queries_collection
 from datetime import datetime
 import uvicorn
@@ -47,11 +47,10 @@ async def generate_plan(request: Request):
             )
 
         logger.info(f"Processing goal for user {user_id}: {goal_input}")
-        kernel, plugins = get_kernel_and_plugins()
 
         # Step 1: Get high-level objective
         logger.debug("Getting objective interpretation")
-        objective = await plugins["goal_interpreter"].invoke(kernel=kernel, input=goal_input)
+        objective = await call_goal_interpreter(goal_input)
         logger.info(f"Interpreted objective: {objective}")
         
         # Extract duration from objective if specified
@@ -98,7 +97,7 @@ async def generate_plan(request: Request):
             
         # Step 2: Break down into high-level tasks with integrated subtasks and resources
         logger.debug("Breaking down into tasks with subtasks and resources")
-        tasks_response = await plugins["task_breakdown"].invoke(kernel=kernel, input=task_breakdown_input)
+        tasks_response = await call_task_breakdown(task_breakdown_input)
         
         # Parse the response to extract tasks, subtasks, and resources
         tasks_text = str(tasks_response).strip()
@@ -164,7 +163,7 @@ async def generate_plan(request: Request):
             # Add timeline if requested
             if include_timeline:
                 logger.debug(f"Generating timeline for task: {task_title}")
-                if "timeline_generator" in plugins:
+                if True:
                     # If we have a specified duration, calculate a portion for this task
                     if specified_duration and specified_duration.lower() != "not mentioned" and total_days > 0:
                         # Get pre-allocated days for this task
@@ -179,7 +178,7 @@ async def generate_plan(request: Request):
                             f"Task: {task_title}"
                         )
                         logger.debug(f"Using task context with duration: {task_context}")
-                        timeline = await plugins["timeline_generator"].invoke(kernel=kernel, input=task_context)
+                        timeline = await call_timeline_generator(task_context)
                         
                         # Extract the numeric duration for tracking allocated time
                         duration_text = str(timeline).strip()
@@ -222,7 +221,7 @@ async def generate_plan(request: Request):
                             allocated_days += days_allocated
                             logger.info(f"Using calculated {days_allocated} days. Total allocated: {allocated_days}/{total_days}")
                     else:
-                        timeline = await plugins["timeline_generator"].invoke(kernel=kernel, input=task_title)
+                        timeline = await call_timeline_generator(task_title)
                         duration_text = str(timeline).strip()
                         
                     # Ensure duration is added to the task object
@@ -389,6 +388,12 @@ class SubtaskBulkStatus(BaseModel):
 
 class TaskBulkStatus(BaseModel):
     task_statuses: List[TaskStatus]
+
+# Define Pydantic models for the new plan modification feature
+class PlanModificationRequest(BaseModel):
+    modification_text: str  # Natural language request to modify the plan
+    task_id: str  # ID of the plan to modify
+    user_id: str  # User ID
 
 @app.put("/api/task/{task_id}")
 async def update_task(task_id: str, user_id: str, update_data: TaskUpdate = Body(...)):
@@ -863,6 +868,111 @@ async def get_task_progress(task_id: str, user_id: str):
         raise he
     except Exception as e:
         logger.error(f"Error getting task progress: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@app.post("/api/task/modify")
+async def modify_plan(modification_request: PlanModificationRequest = Body(...)):
+    try:
+        user_id = modification_request.user_id
+        task_id = modification_request.task_id
+        modification_text = modification_request.modification_text
+        
+        if not user_id or not task_id or not modification_text:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing required fields: user_id, task_id, or modification_text"
+            )
+            
+        # Convert string task_id to ObjectId
+        try:
+            task_object_id = ObjectId(task_id)
+        except:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid task ID format"
+            )
+
+        # Find the existing task
+        existing_task = queries_collection.find_one(
+            {"_id": task_object_id, "user_id": user_id}
+        )
+        
+        if not existing_task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Task not found"
+            )
+        
+        # Extract the current plan
+        current_plan = existing_task.get("result", {})
+        if not current_plan:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Plan content not found"
+            )
+        
+        # Prepare inputs for the plan modifier
+        import json
+        current_plan_json = json.dumps(current_plan)
+        combined_input = f"Current Plan JSON:\n{current_plan_json}\n\nModification Request:\n{modification_text}"
+
+        # Invoke the plan modification agent
+        logger.info(f"Invoking plan modifier with text: {modification_text[:100]}...")
+        try:
+            modified_plan_text = await call_plan_modifier(combined_input)
+            logger.debug(f"Plan modifier string result: {modified_plan_text[:100]}...")
+            
+            try:
+                # Parse the agent's response as JSON
+                modified_plan = json.loads(modified_plan_text)
+                
+                # Check if the agent is asking for clarification
+                if isinstance(modified_plan, dict) and modified_plan.get("needs_clarification", False):
+                    return {
+                        "needs_clarification": True,
+                        "clarification_question": modified_plan.get("clarification_question", "Could you please clarify your request?")
+                    }
+                    
+                # Update the plan in the database
+                update_result = queries_collection.update_one(
+                    {"_id": task_object_id, "user_id": user_id},
+                    {"$set": {"result": modified_plan}}
+                )
+                
+                if update_result.modified_count == 0:
+                    logger.warning("No changes made to the plan")
+                    
+                # Return the updated plan
+                updated_task = queries_collection.find_one(
+                    {"_id": task_object_id, "user_id": user_id}
+                )
+                
+                # Convert ObjectId to string for JSON serialization
+                updated_task['_id'] = str(updated_task['_id'])
+                
+                return updated_task
+                
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse modified plan: {str(e)}")
+                return {
+                    "error": "Failed to parse the modified plan",
+                    "raw_response": str(modified_plan_text)
+                }
+                
+        except Exception as e:
+            logger.error(f"Error invoking plan modifier: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error modifying plan: {str(e)}"
+            )
+            
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error in modify_plan: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)

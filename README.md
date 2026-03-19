@@ -30,7 +30,7 @@ This project is a backend for an AI project, Please checkout the frontend here -
 
 3. Install the dependencies:
    ```bash
-   pip install -r requirements.txt
+   
    ```
 
 ## Running the Server
