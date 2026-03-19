@@ -1,87 +1,186 @@
-# Basic Python AI Agent Project
+# VisualAgent
 
-# VisualAgent Backend
+An AI-powered goal planning app that turns your goals into structured, time-boxed learning plans. Built with React + FastAPI, orchestrated by Azure AI agents.
 
-This project is a backend for an AI project, Please checkout the frontend here - https://github.com/sarthakkgupta/AIProject.git using FastAPI and Semantic Kernel. It is designed to orchestrate multiple agents and interact with OpenAI or Azure OpenAI APIs.
+## Features
 
-## Prerequisites
+- **AI Plan Generation** — Describe your goal in plain language and get a structured plan with tasks, subtasks, and timelines
+- **Smart Duration Handling** — Plans are automatically sized to fit your specified timeframe
+- **Progress Tracking** — Check off tasks and track completion percentage across all your plans
+- **Plan Modification** — Modify existing plans with natural language requests
+- **Dashboard** — Overview of all plans, progress stats, and recent activity
+- **Authentication** — Secure login via Clerk
 
-1. **Python**: Ensure you have Python 3.9 or later installed.
-2. **Environment Variables**: Create a `.env` file in the `backend/` directory with the following keys:
-   ```env
-   OPENAI_API_KEY=your_openai_api_key
-   AZURE_API_KEY=your_azure_api_key
-   ```
+## Tech Stack
 
-## Installation
-
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd VisualAgent/backend
-   ```
-
-2. Create a virtual environment and activate it:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On macOS/Linux
-   venv\Scripts\activate   # On Windows
-   ```
-
-3. Install the dependencies:
-   ```bash
-   
-   ```
-
-## Running the Server
-
-1. Start the FastAPI server:
-   ```bash
-   uvicorn main:app --reload
-   ```
-
-2. The server will be available at `http://127.0.0.1:8000`.
-
-## Testing the API
-
-1. Use a tool like Postman or cURL to test the `/api/plan` endpoint.
-2. Example request:
-   ```bash
-   curl -X POST "http://127.0.0.1:8000/api/plan" -H "Content-Type: application/json" -d '{"objective": "Learn Data Structures"}'
-   ```
-3. Example response:
-   ```json
-   {
-     "objective": "Learn Data Structures",
-     "tasks": ["Week 1: Arrays", "Week 2: Trees"],
-     "schedule": {
-       "Day 1": ["Read about Arrays"],
-       "Day 2": ["Practice problems"]
-     },
-     "resources": [
-       {"title": "Arrays Explained", "url": "https://youtube.com/..."}
-     ]
-   }
-   ```
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, TypeScript, Vite, React Router, Clerk |
+| Backend | FastAPI, Python 3.12 |
+| AI | Azure AI Projects SDK, GPT-4 |
+| Database | MongoDB Atlas |
+| Auth | Clerk (frontend) |
 
 ## Project Structure
 
 ```
-backend/
-├── main.py
-├── .env
-├── requirements.txt
-└── sk_config/
-    ├── kernel.py
-    └── plugins/
-        ├── goal_interpreter/
-        ├── task_breakdown/
-        ├── scheduler/
-        └── resource_finder/
+VisualAgent/
+├── backend/
+│   ├── main.py                  # FastAPI app entry point
+│   ├── models.py                # Pydantic request/response models
+│   ├── requirements.txt
+│   ├── api/
+│   │   ├── plans.py             # POST /api/plan, POST /api/task/modify
+│   │   ├── tasks.py             # Task CRUD + completion endpoints
+│   │   └── health.py            # GET /api/health, GET /api/history
+│   ├── db/
+│   │   └── mongo_config.py      # MongoDB connection
+│   └── sk_config/
+│       ├── plugins.py           # Azure AI agent orchestration
+│       └── plugins/             # Agent prompt configs
+│           ├── goal_interpreter/
+│           ├── task_breakdown/
+│           ├── timeline_generator/
+│           ├── plan_modifier/
+│           └── scheduler/
+└── frontend/
+    ├── src/
+    │   ├── main.tsx             # React entry point (Clerk + Router)
+    │   ├── App.tsx              # Routes and navigation
+    │   ├── types.ts             # TypeScript interfaces
+    │   ├── pages/
+    │   │   ├── HomePage.tsx
+    │   │   ├── CreateGoal.tsx   # Goal input + plan generation
+    │   │   ├── MyGoals.tsx      # Plan list with search/filter
+    │   │   ├── GoalDetails.tsx  # Plan detail + progress tracking
+    │   │   ├── DashboardPage.tsx
+    │   │   ├── AboutPage.tsx
+    │   │   └── PricingPage.tsx
+    │   └── components/
+    │       └── TypeWriter.tsx
+    ├── package.json
+    └── vite.config.ts           # Proxies /api → localhost:8000
 ```
 
-## Next Steps
+## Prerequisites
 
-- Add actual prompts in `plugins`.
-- Connect to OpenAI or Azure OpenAI.
-- Test with a frontend or Postman.
+- Python 3.12+
+- Node.js 18+
+- MongoDB Atlas cluster
+- Azure AI Foundry project with a deployed GPT-4 model
+- Clerk account
+
+## Setup
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/sarthakkgupta/VisualAgent.git
+cd VisualAgent
+```
+
+### 2. Backend
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Create a `.env` file in the **root** of the repo (`VisualAgent/.env`):
+
+```env
+AZURE_FOUNDRY_DEPLOYMENT=gpt-4.1
+AZURE_FOUNDRY_ENDPOINT=https://<your-project>.services.ai.azure.com/api/projects/<project-name>
+AZURE_OPENAI_API_KEY=<your-key>
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/
+```
+
+### 3. Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+Create `frontend/.env`:
+
+```env
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_<your-clerk-key>
+VITE_API_URL=http://127.0.0.1:8000
+```
+
+## Running Locally
+
+Start the backend (from the `backend/` directory):
+
+```bash
+cd backend
+uvicorn main:app --reload --port 8000
+```
+
+Start the frontend (from the `frontend/` directory):
+
+```bash
+cd frontend
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`. The Vite dev server automatically proxies all `/api` requests to the backend on port 8000.
+
+## API Reference
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/plan` | Generate a new AI plan |
+| `GET` | `/api/history?user_id=` | Get all plans for a user |
+| `GET` | `/api/task/{id}?user_id=` | Get a specific plan |
+| `PUT` | `/api/task/{id}?user_id=` | Replace objective/tasks |
+| `DELETE` | `/api/task/{id}?user_id=` | Delete a plan |
+| `PATCH` | `/api/task/{id}/detail?user_id=` | Update a specific task field |
+| `PATCH` | `/api/task/{id}/completion?user_id=` | Toggle task completion |
+| `PATCH` | `/api/task/{id}/bulk-completion?user_id=` | Bulk toggle completions |
+| `GET` | `/api/task/{id}/progress?user_id=` | Get progress stats |
+| `POST` | `/api/task/modify` | Modify a plan with natural language |
+| `GET` | `/api/health` | Health check |
+
+### Example: Generate a Plan
+
+```bash
+curl -X POST http://localhost:8000/api/plan \
+  -H "Content-Type: application/json" \
+  -d '{"goal": "Learn Python in 2 weeks", "user_id": "user_123", "include_timeline": true}'
+```
+
+```json
+{
+  "objective": "Objective: Learn Python programming\nDuration: 2 weeks",
+  "tasks": [
+    {
+      "title": "Python Basics",
+      "content": "- Install Python and set up VS Code\n- Learn variables, types, and control flow\n- Complete exercises on Codecademy",
+      "duration": "4 days",
+      "completed": false
+    }
+  ]
+}
+```
+
+## AI Agent Pipeline
+
+Each plan is generated by a chain of Azure AI agents:
+
+```
+User Goal
+   ↓
+Goal Interpreter   →  Extracts objective + duration
+   ↓
+Task Breakdown     →  Creates 2–6 tasks with subtasks
+   ↓
+Timeline Generator →  Assigns durations that sum to total
+   ↓
+MongoDB            →  Stores completed plan
+```
+
+Plan modifications use a separate **Plan Modifier** agent that accepts the current plan JSON and a natural language change request.
