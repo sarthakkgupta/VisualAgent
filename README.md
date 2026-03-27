@@ -12,9 +12,18 @@ VisualAgent uses Azure AI agents to intelligently parse your goals and automatic
 
 ## Demo
 
+**About / Problem Statement**
+![About Page](docs/screenshots/about.png)
+
+**Create Plan**
+![Create Plan](docs/screenshots/create-plan.png)
+
+**My Plans**
+![My Plans](docs/screenshots/my-plans.png)
+
 The app shows:
-- **Create Goal Page**: Clean input form with goal description and desired timeline
-- **Dashboard**: Overview of all your plans, progress percentages, and recent activity
+- **Create Plan Page**: Clean input form — describe your goal and the AI generates a detailed roadmap
+- **My Plans**: Overview of all your AI-generated plans with task counts and quick navigation
 - **Plan Details**: Expandable task hierarchy with completion tracking and real-time updates
 
 ## How to Use
